@@ -1,0 +1,19 @@
+rundeck:
+  build: .
+  ports:
+    - 4440:4440
+  links:
+    - mysql:mysql
+  environment:
+    SERVER_URL: "http://localhost:4440"
+    DATABASE_URL: "jdbc:mysql://mysql/rundeck?autoReconnect=true"
+    DATABASE_USER: rundeck
+    DATABASE_PASSWORD: rundeck
+
+mysql:
+  image: mysql
+  environment:
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: rundeck
+    MYSQL_USER: rundeck
+    MYSQL_PASSWORD: rundeck

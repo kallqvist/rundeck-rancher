@@ -1,0 +1,14 @@
+# yaml plugin metadata
+
+name: docker-plugin
+version: plugin version
+rundeckPluginVersion: 1.0
+author: author name
+date: release date
+providers:
+    - name: docker-prov
+      service: NodeExecutor
+      plugin-type: script
+      script-interpreter: python
+      script-file: hello.py
+      script-args: a b c
