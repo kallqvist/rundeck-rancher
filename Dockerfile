@@ -12,14 +12,15 @@ RUN chown rundeck:rundeck /tmp/rundeck
 RUN mkdir -p /var/lib/rundeck/.ssh
 RUN chown rundeck:rundeck /var/lib/rundeck/.ssh
 
-# Allow custom JVM config
-RUN sed -i "s/export RDECK_JVM=\"/export RDECK_JVM=\"\${RDECK_JVM} /" /etc/rundeck/profile
+# Remove default plugins
+RUN rm -R /var/lib/rundeck/libext/*
+RUN rm -R /var/lib/rundeck/exp/webapp/WEB-INF/rundeck/plugins/*
 
 # Slack plugin
 RUN curl -Lo /var/lib/rundeck/libext/rundeck-slack-incoming-webhook-plugin-0.6.jar https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin/releases/download/v0.6.dev/rundeck-slack-incoming-webhook-plugin-0.6.jar
 
 # Build/install bundled plugins
-RUN apt-get update && apt-get install -y zip
+RUN apt-get update && apt-get install -y python zip
 ADD plugins-source /build
 WORKDIR /build
 RUN ./build-all.sh && rm -R /build

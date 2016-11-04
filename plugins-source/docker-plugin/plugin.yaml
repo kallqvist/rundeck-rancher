@@ -6,9 +6,22 @@ rundeckPluginVersion: 1.0
 author: author name
 date: release date
 providers:
-    - name: docker-prov
-      service: NodeExecutor
+    - name: docker-resources
+      service: ResourceModelSource
+      resource-format: resourcejson
       plugin-type: script
       script-interpreter: python
       script-file: hello.py
       script-args: a b c
+    - name: docker-executor
+      service: NodeExecutor
+      plugin-type: script
+      script-interpreter: python
+      script-file: hello.py
+      script-args: d e f
+    - name: docker-filecopy
+      service: FileCopier
+      plugin-type: script
+      script-interpreter: python
+      script-file: hello.py
+      script-args: g h i
