@@ -19,11 +19,14 @@ RUN rm -R /var/lib/rundeck/exp/webapp/WEB-INF/rundeck/plugins/*
 # Slack plugin
 RUN curl -Lo /var/lib/rundeck/libext/rundeck-slack-incoming-webhook-plugin-0.6.jar https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin/releases/download/v0.6.dev/rundeck-slack-incoming-webhook-plugin-0.6.jar
 
-# Build/install bundled plugins
-RUN apt-get update && apt-get install -y python zip
+# Python dependencies
+RUN apt-get update && apt-get install -y python python-pip zip
+
+# Build rundeck plugins
 ADD plugins-source /build
 WORKDIR /build
-RUN ./build-all.sh && rm -R /build
+RUN ./build-all.sh
+# && rm -R /build
 WORKDIR /
 
 ADD ./docker-entrypoint.sh /docker-entrypoint.sh
@@ -33,5 +36,5 @@ EXPOSE 4440
 # VOLUME  ["/etc/rundeck", "/var/rundeck", "/var/lib/rundeck", "/var/lib/mysql", "/var/log/rundeck", "/opt/rundeck-plugins", "/var/lib/rundeck/logs", "/var/lib/rundeck/var/storage"]
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-# check docker-entrypoint.sh, we keep this empty to allow command overrides at runtime
+# check docker-entrypoint.sh, we keep this empty and check for empty command in entrypoint to allow command overrides at runtime
 CMD [""]

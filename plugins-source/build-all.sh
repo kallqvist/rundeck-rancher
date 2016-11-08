@@ -1,4 +1,5 @@
 #!/bin/bash
 
 # todo: iterate folders
-zip -r /var/lib/rundeck/libext/docker-plugin.zip docker-plugin
+python rancher/setup.py install
+zip -r /var/lib/rundeck/libext/rancher.zip rancher
