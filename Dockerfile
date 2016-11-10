@@ -15,8 +15,8 @@ RUN mkdir -p /var/lib/rundeck/.ssh
 RUN chown rundeck:rundeck /var/lib/rundeck/.ssh
 
 # Remove default plugins
-# RUN rm -R /var/lib/rundeck/libext/*
-# RUN rm -R /var/lib/rundeck/exp/webapp/WEB-INF/rundeck/plugins/*
+RUN rm -R /var/lib/rundeck/libext/*
+RUN rm -R /var/lib/rundeck/exp/webapp/WEB-INF/rundeck/plugins/*
 
 # Slack plugin
 RUN curl -Lo /var/lib/rundeck/libext/rundeck-slack-incoming-webhook-plugin-0.6.jar https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin/releases/download/v0.6.dev/rundeck-slack-incoming-webhook-plugin-0.6.jar
@@ -42,6 +42,8 @@ ENV RDECK_SERVER_URL http://localhost:4440
 ENV DATABASE_URL jdbc:h2:file:/var/lib/rundeck/data/rundeckdb;MVCC=true;TRACE_LEVEL_FILE=4
 ENV DATABASE_USER rundeck
 ENV DATABASE_PASSWORD rundeck
+
+VOLUME ["/var/rundeck"]
 
 EXPOSE 4440
 
