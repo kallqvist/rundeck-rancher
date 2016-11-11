@@ -17,12 +17,11 @@ providers:
           name: stack_name
           title: Stack name
           description: Enter the Rancher stack name to use for filtering (optional)
-    # - name: rancher-executor
-    #   service: NodeExecutor
-    #   plugin-type: script
-    #   script-interpreter: python
-    #   script-file: copy-file.py
-    #   script-args: d e f
+    - name: rancher-executor
+      service: NodeExecutor
+      plugin-type: script
+      script-interpreter: python
+      script-file: node-executor.py
     - name: rancher-filecopy
       service: FileCopier
       plugin-type: script

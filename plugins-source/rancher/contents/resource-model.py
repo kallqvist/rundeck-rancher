@@ -20,7 +20,8 @@ for container in api_res['data']:
         # 'type': container['kind'],
         'image': container['imageUuid'],
         'state': container['state'],
-        'name': container['name'],
+        'nodename': container['name'],
+        'hostname': container['name'],
     }
 
     # skip rancher network agents
@@ -41,6 +42,6 @@ for container in api_res['data']:
         if not 'stack' in node or node['stack'].lower() != stack_filter:
             continue
 
-    nodes[node['name']] = node
+    nodes[node['nodename']] = node
 
 print( json.dumps(nodes, indent=2) )
