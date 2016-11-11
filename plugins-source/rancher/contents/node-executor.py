@@ -3,41 +3,35 @@ import requests
 import websocket
 import json
 import os
+import base64
 
-# todo: read from rundeck input?
-bash_script = """
-#!/bin/bash
-pwd
-echo "derp"
-sleep 2
-echo "more derp"
-echo "\ <- backslash"
-sleep 1
-echo "and end with some lerp"
-ls -l
-uname -a
-"""
-bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
+bash_script = os.environ.get('RD_EXEC_COMMAND', '')
 
-raise Exception( ":: {}".format(os.environ['RD_FILE_COPY_FILE']) )
-# ${file-copy.destination} # optional
+if len(bash_script) == 0:
+    raise Exception( "Can't run, command is empty!" )
 
-# # todo: script filename from rundeck?
-# api_data = {
-#     # "attachStdin": True,
-#     # "attachStdout": True,
-#     "command": [
-#       "/bin/bash",
-#       "-c",
-#       "echo -e \"{}\" > test.sh".format(bash_script)
-#     ],
-#     # "tty": True
-# }
-#
-# # todo: container ID?
-# api_url = "{}/containers/1i18714?action=execute".format(os.environ['CATTLE_CONFIG_URL'])
-# api_res = requests.post(api_url, auth=HTTPBasicAuth(os.environ['CATTLE_ACCESS_KEY'], os.environ['CATTLE_SECRET_KEY']), json=api_data).json()
-#
-# ws_url = "{}?token={}".format(api_res['url'], api_res['token'])
-# ws = websocket.create_connection(ws_url)
-# ws_res = ws.recv()
+# bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
+
+api_data = {
+    # "attachStdin": True,
+    "attachStdout": True,
+    "command": [
+      "/bin/bash",
+      "-c",
+      bash_script
+    ],
+    # "tty": True
+}
+
+for e in os.environ:
+    print(e)
+
+# todo: container ID?
+api_url = "{}/containers/1i18714?action=execute".format(os.environ['CATTLE_CONFIG_URL'])
+api_res = requests.post(api_url, auth=HTTPBasicAuth(os.environ['CATTLE_ACCESS_KEY'], os.environ['CATTLE_SECRET_KEY']), json=api_data).json()
+
+ws_url = "{}?token={}".format(api_res['url'], api_res['token'])
+ws = websocket.create_connection(ws_url)
+ws_res = ws.recv()
+
+print(base64.b64decode(ws_res).strip())
