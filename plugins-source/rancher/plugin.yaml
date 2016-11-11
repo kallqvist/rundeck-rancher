@@ -6,22 +6,26 @@ rundeckPluginVersion: 1.0
 author: author name
 date: release date
 providers:
-    - name: docker-resources
+    - name: rancher-resources
       service: ResourceModelSource
       resource-format: resourcejson
       plugin-type: script
       script-interpreter: python
-      script-file: hello.py
-      script-args: a b c
-    - name: docker-executor
-      service: NodeExecutor
-      plugin-type: script
-      script-interpreter: python
-      script-file: hello.py
-      script-args: d e f
-    - name: docker-filecopy
+      script-file: resource-model.py
+      config:
+        - type: String
+          name: stack_name
+          title: Stack name
+          description: Enter the Rancher stack name to use for filtering (optional)
+    # - name: rancher-executor
+    #   service: NodeExecutor
+    #   plugin-type: script
+    #   script-interpreter: python
+    #   script-file: copy-file.py
+    #   script-args: d e f
+    - name: rancher-filecopy
       service: FileCopier
       plugin-type: script
       script-interpreter: python
-      script-file: hello.py
-      script-args: g h i
+      script-file: copy-file.py
+      script-args: 1 2 3

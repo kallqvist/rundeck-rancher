@@ -4,8 +4,8 @@ ENV DEBIAN_FRONTEND noninteractive
 
 ADD content/ /
 
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/sources.list && apt-get -qq update && apt-get -qqy upgrade && apt-get -qqy install --no-install-recommends bash openjdk-8-jre-headless procps sudo openssh-client mysql-client curl git && apt-get clean
-RUN curl -Lo /tmp/rundeck.deb http://dl.bintray.com/rundeck/rundeck-deb/rundeck-2.6.9-1-GA.deb
+RUN apt-get -qq update && apt-get -qqy upgrade && apt-get -qqy install --no-install-recommends bash openjdk-8-jre-headless procps sudo openssh-client mysql-client curl git && apt-get clean
+RUN curl -Lo /tmp/rundeck.deb http://dl.bintray.com/rundeck/rundeck-deb/rundeck-2.6.10-1-GA.deb
 RUN curl -Lo /tmp/rundeck-cli.deb https://github.com/rundeck/rundeck-cli/releases/download/v0.1.19/rundeck-cli_0.1.19-1_all.deb
 RUN dpkg -i /tmp/rundeck*.deb && rm /tmp/rundeck*.deb
 RUN chown rundeck:rundeck /tmp/rundeck
@@ -31,8 +31,7 @@ ADD ./config-templates /config-templates
 # Build rundeck plugins
 ADD plugins-source /build
 WORKDIR /build
-# RUN ./build-all.sh
-# && rm -R /build
+RUN ./build-all.sh && rm -R /build
 WORKDIR /
 
 ADD ./docker-entrypoint.sh /docker-entrypoint.sh
