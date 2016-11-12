@@ -1,10 +1,10 @@
 # yaml plugin metadata
 
-name: docker-plugin
-version: plugin version
-rundeckPluginVersion: 1.0
-author: author name
-date: release date
+name: rancher-plugin
+version: 0.1
+rundeckPluginVersion: 1.2
+author: Klas Källqvist
+date: 2016-11-11
 providers:
     - name: rancher-resources
       service: ResourceModelSource
@@ -19,6 +19,7 @@ providers:
           description: Enter the Rancher stack name to use for filtering (optional)
     - name: rancher-executor
       service: NodeExecutor
+      mergeEnvironment: true
       plugin-type: script
       script-interpreter: python
       script-file: node-executor.py
