@@ -5,12 +5,12 @@ rundeck:
   links:
     - mysql:mysql
   environment:
-    SERVER_URL: "http://localhost:4440"
+    RDECK_HOST: "192.168.99.100"
     DATABASE_URL: "jdbc:mysql://mysql/rundeck?autoReconnect=true"
     DATABASE_USER: rundeck
     DATABASE_PASSWORD: rundeck
   volumes:
-    - ./plugins-source/rancher:/build/rancher
+    - ./plugins-source:/build
 
 mysql:
   image: mysql

@@ -6,9 +6,9 @@
 # ----------------------------------------------------------------
 
 framework.server.name = localhost
-framework.server.hostname = localhost
-framework.server.port = 4440
-framework.server.url = http://localhost:4440
+framework.server.hostname = {{ RDECK_HOST }}
+framework.server.port = {{ RDECK_HTTP_PORT }}
+framework.server.url = http://{{ RDECK_HOST }}:{{ RDECK_HTTP_PORT}}
 # Username/password used by CLI tools.
 framework.server.username = admin
 framework.server.password = admin

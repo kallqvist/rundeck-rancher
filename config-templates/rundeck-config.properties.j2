@@ -5,7 +5,7 @@ rdeck.base=/var/lib/rundeck
 #rss.enabled if set to true enables RSS feeds that are public (non-authenticated)
 rss.enabled=false
 # change hostname here
-grails.serverURL={{ RDECK_SERVER_URL }}
+grails.serverURL=http://{{ RDECK_HOST }}:{{ RDECK_HTTP_PORT}}
 
 rundeck.projectsStorageType=db
 dataSource.dbCreate = update
