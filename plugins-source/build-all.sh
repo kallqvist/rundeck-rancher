@@ -1,5 +1,7 @@
 #!/bin/bash
-
-# todo: iterate folders
-python rancher/setup.py install
-zip -r /var/lib/rundeck/libext/rancher.zip rancher
+for f in *; do
+	if [[ -d $f ]]; then
+		python ${f}/setup.py install
+		zip -r /var/lib/rundeck/libext/${f}.zip ${f}
+	fi
+done
