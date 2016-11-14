@@ -3,6 +3,8 @@ import requests
 import json
 import os
 
+# todo: environment id?
+
 api_url = '{}/containers'.format(os.environ['CATTLE_CONFIG_URL'])
 api_res = requests.get(api_url, auth=HTTPBasicAuth(os.environ['CATTLE_ACCESS_KEY'], os.environ['CATTLE_SECRET_KEY'])).json()
 

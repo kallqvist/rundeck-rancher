@@ -12,6 +12,12 @@ if len(bash_script) == 0:
 
 # bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
 
+# todo: remove this when rundeck bug is resolved
+cattle_config = json.load(open("/rancher-auth-workaround.json"))
+api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
+api_access_key = cattle_config['access_key'] #  os.environ['CATTLE_ACCESS_KEY']
+api_secret_key = cattle_config['secret_key'] #  os.environ['CATTLE_SECRET_KEY']
+
 api_data = {
     # "attachStdin": True,
     "attachStdout": True,
@@ -23,14 +29,23 @@ api_data = {
     # "tty": True
 }
 
-for e in os.environ:
-    print(e)
+# for e in os.environ:
+#     print(e)
 
-# todo: container ID?
-api_url = "{}/containers/1i18714?action=execute".format(os.environ['CATTLE_CONFIG_URL'])
-api_res = requests.post(api_url, auth=HTTPBasicAuth(os.environ['CATTLE_ACCESS_KEY'], os.environ['CATTLE_SECRET_KEY']), json=api_data).json()
+node_id = os.environ.get('RD_NODE_ID', '')
+if len(node_id) == 0:
+    raise Exception("Can't run, node ID is not set!")
 
-ws_url = "{}?token={}".format(api_res['url'], api_res['token'])
+# todo: is container running?
+
+api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
+api_res = requests.post(api_url, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
+api_res_json = api_res.json()
+
+if api_res.status_code != 200:
+    raise Exception("Rancher API error, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
+
+ws_url = "{}?token={}".format(api_res_json['url'], api_res_json['token'])
 ws = websocket.create_connection(ws_url)
 ws_res = ws.recv()
 
