@@ -43,7 +43,7 @@ ENV DATABASE_URL jdbc:h2:file:/var/lib/rundeck/data/rundeckdb;MVCC=true;TRACE_LE
 ENV DATABASE_USER rundeck
 ENV DATABASE_PASSWORD rundeck
 
-VOLUME ["/var/rundeck"]
+# VOLUME ["/var/rundeck"]
 
 EXPOSE 4440
 

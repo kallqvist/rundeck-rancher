@@ -12,6 +12,8 @@ if len(bash_script) == 0:
 
 # bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
 
+# todo: logging
+
 # todo: remove this when rundeck bug is resolved
 cattle_config = json.load(open("/rancher-auth-workaround.json"))
 api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
@@ -37,6 +39,7 @@ if len(node_id) == 0:
     raise Exception("Can't run, node ID is not set!")
 
 # todo: is container running?
+# todo: tty is false?
 
 api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 api_res = requests.post(api_url, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)

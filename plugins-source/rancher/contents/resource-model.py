@@ -3,12 +3,19 @@ import requests
 import json
 import os
 
-# todo: environment id?
+api_base_url = os.environ['CATTLE_CONFIG_URL']
+api_access_key = os.environ['CATTLE_ACCESS_KEY']
+api_secret_key = os.environ['CATTLE_SECRET_KEY']
+api_auth = HTTPBasicAuth(api_access_key, api_secret_key)
 
-api_url = '{}/containers'.format(os.environ['CATTLE_CONFIG_URL'])
-api_res = requests.get(api_url, auth=HTTPBasicAuth(os.environ['CATTLE_ACCESS_KEY'], os.environ['CATTLE_SECRET_KEY'])).json()
+# api_url_environment = '{}/environment'.format(api_base_url)
+# api_res_environment = requests.get(api_url_environment, auth=api_auth).json()
+# print(json.dumps(api_res_environment, indent=2))
 
-if not 'data' in api_res:
+api_url_containers = '{}/containers'.format(api_base_url)
+api_res_containers = requests.get(api_url_containers, auth=api_auth).json()
+
+if not 'data' in api_res_containers:
     raise Exception("No data returned from Rancher API")
 
 nodes = {}
@@ -16,15 +23,19 @@ nodes = {}
 # plugin config
 stack_filter = os.environ.get('RD_CONFIG_STACK_NAME', '').lower()
 
-for container in api_res['data']:
+for container in api_res_containers['data']:
+    # todo: environment ID?
     node = {
         'id': container['id'],
         # 'type': container['kind'],
         'image': container['imageUuid'],
         'state': container['state'],
         'nodename': container['name'],
-        'hostname': container['name'],
+        'hostname': '-', # todo: shouldn't need this?
+        'tty': bool(container['tty']),
     }
+
+    # print(json.dumps(container, indent=2))
 
     # skip rancher network agents
     if 'io.rancher.container.system' in container['labels'] and container['labels']['io.rancher.container.system'] == 'NetworkAgent':
