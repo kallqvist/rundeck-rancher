@@ -8,14 +8,19 @@ import os
 import re
 import logging
 
+# todo: abstract away as shared code
 class ErrorLogger(logging.StreamHandler):
+    last_error = ''
     def emit(self, record):
         msg = self.format(record)
+        self.last_error = msg
         raise Exception (msg)
+    pass
 
+log_handler = ErrorLogger()
 logger = logging.getLogger('websocket')
 logger.setLevel(logging.ERROR)
-logger.addHandler(ErrorLogger())
+logger.addHandler(log_handler)
 
 # todo: remove this when rundeck bug is resolved
 cattle_config = json.load(open("/rancher-auth-workaround.json"))
@@ -98,7 +103,7 @@ if api_res_logs.status_code != 200:
 def logs_on_error(ws, error):
     print("### logs err ###")
     print(error)
-    ws.close()
+    # ws.close()
 
 def logs_on_close(ws):
     print "### logs closed ###"
@@ -107,10 +112,16 @@ def logs_on_open(ws):
     print("### logs opened ###")
 
 def logs_on_message(ws, message):
-    msg_match = re.match('^(\d*) (.*?Z)X (.*)$', message)
+    msg_match = re.match('^(\d*) (.*?Z) (.*)$', message)
     if not msg_match:
         raise Exception("Failed to read log format, regex does not match!")
-    print("{} - {}".format(msg_match.group(1), msg_match.group(2)))
+    # todo: newer than start time
+    is_error = (int(msg_match.group(1)) == 2)
+    log_date = msg_match.group(2)
+    log_message = msg_match.group(3)
+
+    if is_error:
+        print("{} - {}".format(log_date, log_message))
 
 # attach to log listener websocket
 ws_url_logs = "{}?token={}".format(api_res_logs_json['url'], api_res_logs_json['token'])
@@ -121,6 +132,9 @@ ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_close = logs_on_close,
     header = {'Authorization': "Basic {}".format(base64.b64encode("{}:{}".format(api_access_key, api_secret_key)))})
 ws_logs.run_forever()
+
+if len(log_handler.last_error) > 0:
+    raise Exception(log_handler.last_error)
 
 print("=== DONE ===")
 # print(base64.b64decode(ws_res).strip())
