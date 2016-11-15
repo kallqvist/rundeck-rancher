@@ -3,6 +3,8 @@ import requests
 import json
 import os
 
+# todo: error handling?
+
 api_base_url = os.environ['CATTLE_CONFIG_URL']
 api_access_key = os.environ['CATTLE_ACCESS_KEY']
 api_secret_key = os.environ['CATTLE_SECRET_KEY']
