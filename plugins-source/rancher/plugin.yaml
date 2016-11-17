@@ -29,3 +29,8 @@ providers:
       script-interpreter: python
       script-file: copy-file.py
       script-args: 1 2 3
+    - name: rancher-nodestep
+      service: WorkflowNodeStep
+      plugin-type: script
+      script-interpreter: python
+      script-file: runonce.py

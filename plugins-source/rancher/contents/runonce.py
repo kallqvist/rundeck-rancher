@@ -1,43 +1,7 @@
-from requests.auth import HTTPBasicAuth
-from dateutil.parser import parse
-import websocket
-import requests
-import logging
-import base64
-import json
-import os
-import re
-
-
-# todo: abstract away as shared code
-class ErrorLogger(logging.StreamHandler):
-    last_error = ''
-    def clear(self):
-        self.last_error = None
-
-    def emit(self, record):
-        msg = self.format(record)
-        self.last_error = msg
-        raise Exception (msg)
-    pass
-
-log_handler = ErrorLogger()
-logger = logging.getLogger('websocket')
-logger.setLevel(logging.ERROR)
-logger.addHandler(log_handler)
-
-# todo: remove this when rundeck bug is resolved
-cattle_config = json.load(open("/rancher-auth-workaround.json"))
-api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
-api_access_key = cattle_config['access_key'] #  os.environ['CATTLE_ACCESS_KEY']
-api_secret_key = cattle_config['secret_key'] #  os.environ['CATTLE_SECRET_KEY']
-
-node_id = os.environ.get('RD_NODE_ID', '')
-if len(node_id) == 0:
-    raise Exception("Can't run, node ID is not set!")
+# common code
+from _nodes_shared import *
 
 # todo: is run-once service?
-# todo: is tty disabled?
 # todo: environment ID?
 
 # tell the service to start before attaching log listener
@@ -86,6 +50,10 @@ def history_logs_on_message(ws, message):
         raise Exception("Failed to read log history, regex does not match!")
     history_logs_last_timestamp[0] = parse(msg_match.group(2)).replace(tzinfo=None)
 
+def history_logs_on_error(ws, error):
+    print("### history logs error ###")
+    raise Exception(error)
+
 history_logs_ws = websocket.WebSocketApp(ws_url_logs,
     on_message = history_logs_on_message,
     header = ws_auth_header)
@@ -95,7 +63,10 @@ history_logs_last_timestamp = history_logs_last_timestamp[0]
 if history_logs_last_timestamp == None:
     raise Exception("Failed to read last log timestamp!")
 
-# todo: handle error?
+print("Last historical timestamp: {}".format(history_logs_last_timestamp))
+
+if log_handler.has_error == True:
+    raise Exception(log_handler.last_error)
 log_handler.clear()
 
 # todo: start service
@@ -106,12 +77,13 @@ log_handler.clear()
 #
 # EVENT LISTENER
 #
+
 def events_on_error(ws, error):
-    print("### events stream error ###")
-    print error
+    print("### events error ###")
+    raise Exception(error)
 
 def events_on_close(ws):
-    print("### events stream closed ###")
+    print("### events closed ###")
 
 def events_on_open(ws):
     print("### events stream opened ###")
@@ -138,7 +110,8 @@ ws_events = websocket.WebSocketApp(ws_url_events,
     header = ws_auth_header)
 ws_events.run_forever()
 
-# todo: check for errors
+if log_handler.has_error == True:
+    raise Exception(log_handler.last_error)
 log_handler.clear()
 
 
@@ -150,14 +123,14 @@ log_handler.clear()
 # LOG LISTENER
 #
 def logs_on_error(ws, error):
-    print("### logs stream error ###")
-    print(error)
+    print("### logs error ###")
+    raise Exception(error)
 
 def logs_on_close(ws):
-    print "### logs stream closed ###"
+    print "### logs closed ###"
 
 def logs_on_open(ws):
-    print("### logs stream opened ###")
+    print("### logs opened ###")
 
 def logs_on_message(ws, message):
     msg_match = re.match(log_re_pattern, message)
@@ -185,7 +158,8 @@ ws_logs.run_forever()
 
 # todo: raise exception if no data is recieved at all?
 
-if len(log_handler.last_error) > 0:
+if log_handler.has_error == True:
     raise Exception(log_handler.last_error)
+log_handler.clear()
 
 print("=== DONE ===")

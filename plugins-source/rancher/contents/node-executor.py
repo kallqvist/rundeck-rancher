@@ -1,24 +1,15 @@
-from requests.auth import HTTPBasicAuth
-import requests
-import websocket
-import json
-import os
-import base64
+from _nodes_shared import *
 
 bash_script = os.environ.get('RD_EXEC_COMMAND', '')
 
 if len(bash_script) == 0:
     raise Exception( "Can't run, command is empty!" )
 
+# todo: is container running?
+
 # bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
 
-# todo: logging
-
-# todo: remove this when rundeck bug is resolved
-cattle_config = json.load(open("/rancher-auth-workaround.json"))
-api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
-api_access_key = cattle_config['access_key'] #  os.environ['CATTLE_ACCESS_KEY']
-api_secret_key = cattle_config['secret_key'] #  os.environ['CATTLE_SECRET_KEY']
+node_id = "1i19139"
 
 api_data = {
     # "attachStdin": True,
@@ -33,13 +24,6 @@ api_data = {
 
 # for e in os.environ:
 #     print(e)
-
-node_id = os.environ.get('RD_NODE_ID', '')
-if len(node_id) == 0:
-    raise Exception("Can't run, node ID is not set!")
-
-# todo: is container running?
-# todo: tty is false?
 
 api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 api_res = requests.post(api_url, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
