@@ -54,9 +54,9 @@ def logs_on_message(ws, message):
     log_message = msg_match.group(3)
 
     if is_error:
-        raise Exception("{} - {}".format(log_date, log_message))
+        raise Exception(log_message)
 
-    print("{} - {}".format(log_date, log_message))
+    print(log_message)
 
 # ws = websocket.create_connection(ws_url_logs)
 # ws_res = ws.recv()

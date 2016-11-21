@@ -5,8 +5,12 @@ import requests
 import logging
 import base64
 import json
+import sys
 import os
 import re
+
+# hiding traceback
+sys.tracebacklimit = 0
 
 class ErrorLogger(logging.StreamHandler):
     has_error = False

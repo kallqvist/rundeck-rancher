@@ -140,9 +140,9 @@ def logs_on_message(ws, message):
 
     if log_date > history_logs_last_timestamp:
         if is_error:
-            raise Exception("{} - {}".format(log_date, log_message))
+            raise Exception(log_message)
 
-        print("{} - {}".format(log_date, log_message))
+        print(log_message)
 
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_open = logs_on_open,
