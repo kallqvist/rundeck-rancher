@@ -2,7 +2,9 @@
 from _nodes_shared import *
 
 # todo: is run-once service?
+# todo: timeout waiting for service start
 # todo: environment ID?
+environment_id = "1a81"
 
 # tell the service to start before attaching log listener
 # api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
@@ -14,9 +16,6 @@ from _nodes_shared import *
 
 # if api_res_start.status_code != 200:
 #     raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
-
-
-log_re_pattern = '^(\d*) (.*?Z) (.*)$'
 
 # setup websocket for reading log output
 api_data_logs = {
@@ -32,9 +31,6 @@ if api_res_logs.status_code != 200:
     raise Exception("Can't create log listener, code \"{} ({})\"!".format(api_res_logs_json['code'], api_res_logs_json['status']))
 
 ws_url_logs = "{}?token={}".format(api_res_logs_json['url'], api_res_logs_json['token'])
-ws_auth_header = {'Authorization': "Basic {}".format(base64.b64encode("{}:{}".format(api_access_key, api_secret_key)))}
-
-
 
 
 
@@ -99,9 +95,9 @@ def events_on_message(ws, message):
         ws.close()
 
 # todo: http?
-ws_base_url = api_base_url.replace("https", "wss")
+ws_base_url = api_base_url.replace("https:", "wss:")
 
-ws_url_events = "{}/projects/1a81/subscribe?eventNames=resource.change".format(ws_base_url)
+ws_url_events = "{}/projects/{}/subscribe?eventNames=resource.change".format(ws_base_url, environment_id)
 ws_events = websocket.WebSocketApp(ws_url_events,
     on_open = events_on_open,
     on_message = events_on_message,
