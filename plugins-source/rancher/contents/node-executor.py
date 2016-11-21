@@ -17,7 +17,6 @@ api_data = {
       "/bin/bash",
       "-c",
       '{{ {{ {}; }} > >( while read line; do echo "1 $(date -u +%Y-%m-%dT%H:%M:%SZ) ${{line}}"; done ); }} 2> >( while read line; do echo "2 $(date -u +%Y-%m-%dT%H:%M:%SZ) ${{line}}"; done )'.format(bash_script)
-      #   '({}) 2> >( while read line; do echo "2 $(date -u +%Y-%m-%dT%H:%M:%SZ) ${{line}}"; done )'.format(bash_script)
     ],
     "tty": False
 }
@@ -57,10 +56,6 @@ def logs_on_message(ws, message):
         raise Exception(log_message)
 
     print(log_message)
-
-# ws = websocket.create_connection(ws_url_logs)
-# ws_res = ws.recv()
-# print(base64.b64decode(ws_res).strip())
 
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_message = logs_on_message,

@@ -17,11 +17,12 @@ providers:
         - type: String
           name: environment_id
           title: Environment ID
-          description: Enter the Rancher environment ID to use for filtering (optional)
+          description: Enter the Rancher environment ID to use for filtering
+          required: true
         - type: String
-          name: stack_name
-          title: Stack name
-          description: Enter the Rancher stack name to use for filtering (optional)
+          name: stack_filter
+          title: Stack filter
+          description: Enter the Rancher stack name regex pattern to use for filtering (optional)
         - type: Boolean
           name: limit_one_container
           title: Limit to one container per service

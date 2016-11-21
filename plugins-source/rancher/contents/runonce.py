@@ -3,19 +3,6 @@ from _nodes_shared import *
 
 # todo: is run-once service?
 # todo: timeout waiting for service start
-# todo: environment ID?
-environment_id = "1a81"
-
-# tell the service to start before attaching log listener
-# api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
-# api_res_start = requests.post(api_url_start, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
-# api_res_start_json = api_res_start.json()
-# print(api_res_start_json)
-#
-# print("---------------------------------------------------------------------")
-
-# if api_res_start.status_code != 200:
-#     raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
 
 # setup websocket for reading log output
 api_data_logs = {
@@ -56,6 +43,7 @@ history_logs_ws = websocket.WebSocketApp(ws_url_logs,
 history_logs_ws.run_forever()
 history_logs_last_timestamp = history_logs_last_timestamp[0]
 
+# todo: can logs be empty if service is new? (set to some minutes ago)
 if history_logs_last_timestamp == None:
     raise Exception("Failed to read last log timestamp!")
 
@@ -65,8 +53,17 @@ if log_handler.has_error == True:
     raise Exception(log_handler.last_error)
 log_handler.clear()
 
-# todo: start service
 
+
+# todo: start service
+# tell the service to start before attaching log listener
+# api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
+# api_res_start = requests.post(api_url_start, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
+# api_res_start_json = api_res_start.json()
+# print(api_res_start_json)
+
+# if api_res_start.status_code != 200:
+#     raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
 
 
 
@@ -83,6 +80,7 @@ def events_on_close(ws):
 
 def events_on_open(ws):
     print("### events stream opened ###")
+    # todo: start service in here?
 
 def events_on_message(ws, message):
     json_message = json.loads(message)
