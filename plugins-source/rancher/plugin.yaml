@@ -7,6 +7,7 @@ author: Klas Källqvist
 date: 2016-11-11
 providers:
     - name: rancher-resources
+      title: Rancher resource collector
       service: ResourceModelSource
       resource-format: resourcejson
       plugin-type: script
@@ -14,22 +15,35 @@ providers:
       script-file: resource-model.py
       config:
         - type: String
+          name: environment_id
+          title: Environment ID
+          description: Enter the Rancher environment ID to use for filtering (optional)
+        - type: String
           name: stack_name
           title: Stack name
           description: Enter the Rancher stack name to use for filtering (optional)
+        - type: Boolean
+          name: limit_one_container
+          title: Limit to one container per service
+          description: Enable to return only one container per service
+          required: true
+          default: true
     - name: rancher-executor
+      title: Rancher container script executor
       service: NodeExecutor
       mergeEnvironment: true
       plugin-type: script
       script-interpreter: python
       script-file: node-executor.py
     - name: rancher-filecopy
+      title: Rancher container file copier
       service: FileCopier
       plugin-type: script
       script-interpreter: python
       script-file: copy-file.py
       script-args: 1 2 3
-    - name: rancher-nodestep
+    - name: rancher-trigger-runonce
+      title: Rancher trigger run-once container
       service: WorkflowNodeStep
       plugin-type: script
       script-interpreter: python
