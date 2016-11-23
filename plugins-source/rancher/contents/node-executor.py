@@ -1,18 +1,27 @@
 from _nodes_shared import *
 
 bash_script = os.environ.get('RD_EXEC_COMMAND', '')
+bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
+# print(bash_script)
 
 if len(bash_script) == 0:
     raise Exception( "Can't run, command is empty!" )
 
-# todo: is container running?
+# check if container is running?
+container_api_url = "{}/container/{}".format(api_base_url, node_id)
+container_api_res = requests.get(container_api_url, auth=api_auth)
+container_api_res_json = container_api_res.json()
+# print(json.dumps(container_api_res_json, indent=2))
 
-bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
-# print(bash_script)
+if container_api_res.status_code != 200:
+    raise Exception("Rancher API error, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
+
+if container_api_res_json['state'] != 'running':
+    raise Exception("Invalid container state, must be set to 'running'!")
 
 api_data = {
-    # "attachStdin": True,
-    # "attachStdout": True,
+    "attachStdin": False,
+    "attachStdout": True,
     "command": [
       "/bin/bash",
       "-c",
@@ -22,11 +31,8 @@ api_data = {
 }
 # print(json.dumps(api_data, indent=2))
 
-# for e in os.environ:
-#     print(e)
-
 api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
-api_res = requests.post(api_url, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
+api_res = requests.post(api_url, auth=api_auth, json=api_data)
 api_res_json = api_res.json()
 # print(json.dumps(api_res_json, indent=2))
 
@@ -34,14 +40,11 @@ if api_res.status_code != 200:
     raise Exception("Rancher API error, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
 
 
-ws_url_logs = "{}?token={}".format(api_res_json['url'], api_res_json['token'])
 
 #
 # LOG LISTENER
 #
-def logs_on_error(ws, error):
-    print("### logs error ###")
-    raise Exception(error)
+ws_url_logs = "{}?token={}".format(api_res_json['url'], api_res_json['token'])
 
 def logs_on_message(ws, message):
     msg_match = re.match(log_re_pattern, base64.b64decode(message).strip())
@@ -59,7 +62,6 @@ def logs_on_message(ws, message):
 
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_message = logs_on_message,
-    on_error = logs_on_error,
     header = ws_auth_header)
 ws_logs.run_forever()
 

@@ -37,6 +37,7 @@ cattle_config = json.load(open("/rancher-auth-workaround.json"))
 api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
 api_access_key = cattle_config['access_key'] #  os.environ['CATTLE_ACCESS_KEY']
 api_secret_key = cattle_config['secret_key'] #  os.environ['CATTLE_SECRET_KEY']
+api_auth = HTTPBasicAuth(api_access_key, api_secret_key)
 ws_auth_header = {'Authorization': "Basic {}".format(base64.b64encode("{}:{}".format(api_access_key, api_secret_key)))}
 
 environment_id = os.environ.get('RD_NODE_ENVIRONMENT_ID', '')

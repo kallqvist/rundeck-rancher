@@ -16,7 +16,7 @@ api_auth = HTTPBasicAuth(api_access_key, api_secret_key)
 # plugin config
 environment_id = os.environ.get('RD_CONFIG_ENVIRONMENT_ID', '').lower()
 stack_filter = os.environ.get('RD_CONFIG_STACK_FILTER', '').lower()
-limit_one_container = os.environ.get('RD_CONFIG_LIMIT_ONE_CONTAINER', 'false') == 'true'
+limit_one_container = (os.environ.get('RD_CONFIG_LIMIT_ONE_CONTAINER', 'false') == 'true')
 
 if len(environment_id) == 0:
     raise Exception("Environment ID is missing!")

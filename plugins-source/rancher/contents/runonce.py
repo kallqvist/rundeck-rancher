@@ -1,8 +1,13 @@
 # common code
 from _nodes_shared import *
 
-# todo: is run-once service?
-# todo: timeout waiting for service start
+# todo: timeout waiting for service start?
+# todo: raise exception if no data is recieved at all?
+
+# check if is start-once service
+is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false') == 'true')
+if not is_start_once:
+    raise Exception("Can't run, isn't start-once service!")
 
 # setup websocket for reading log output
 api_data_logs = {
@@ -10,7 +15,7 @@ api_data_logs = {
     "lines": 100
 }
 api_url_logs = "{}/containers/{}?action=logs".format(api_base_url, node_id)
-api_res_logs = requests.post(api_url_logs, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data_logs)
+api_res_logs = requests.post(api_url_logs, auth=api_auth, json=api_data_logs)
 api_res_logs_json = api_res_logs.json()
 # print(api_res_logs_json)
 
@@ -55,32 +60,19 @@ log_handler.clear()
 
 
 
-# todo: start service
-# tell the service to start before attaching log listener
-# api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
-# api_res_start = requests.post(api_url_start, auth=HTTPBasicAuth(api_access_key, api_secret_key), json=api_data)
-# api_res_start_json = api_res_start.json()
-# print(api_res_start_json)
-
-# if api_res_start.status_code != 200:
-#     raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
-
-
-
 #
 # EVENT LISTENER
 #
 
-def events_on_error(ws, error):
-    print("### events error ###")
-    raise Exception(error)
-
-def events_on_close(ws):
-    print("### events closed ###")
-
 def events_on_open(ws):
     print("### events stream opened ###")
-    # todo: start service in here?
+    # tell the service to start before attaching log listener
+    api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
+    api_res_start = requests.post(api_url_start, auth=api_auth)
+    api_res_start_json = api_res_start.json()
+
+    if not api_res_start.status_code < 300:
+        raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
 
 def events_on_message(ws, message):
     json_message = json.loads(message)
@@ -92,15 +84,12 @@ def events_on_message(ws, message):
     if node_state in ["running"]:
         ws.close()
 
-# todo: http?
-ws_base_url = api_base_url.replace("https:", "wss:")
+ws_base_url = api_base_url.replace("https:", "wss:").replace("http:", "ws:")
 
 ws_url_events = "{}/projects/{}/subscribe?eventNames=resource.change".format(ws_base_url, environment_id)
 ws_events = websocket.WebSocketApp(ws_url_events,
     on_open = events_on_open,
     on_message = events_on_message,
-    on_error = events_on_error,
-    on_close = events_on_close,
     header = ws_auth_header)
 ws_events.run_forever()
 
@@ -111,21 +100,9 @@ log_handler.clear()
 
 
 
-# todo: class?
-
 #
 # LOG LISTENER
 #
-def logs_on_error(ws, error):
-    print("### logs error ###")
-    raise Exception(error)
-
-def logs_on_close(ws):
-    print "### logs closed ###"
-
-def logs_on_open(ws):
-    print("### logs opened ###")
-
 def logs_on_message(ws, message):
     msg_match = re.match(log_re_pattern, message)
     if not msg_match:
@@ -143,17 +120,10 @@ def logs_on_message(ws, message):
         print(log_message)
 
 ws_logs = websocket.WebSocketApp(ws_url_logs,
-    on_open = logs_on_open,
     on_message = logs_on_message,
-    on_error = logs_on_error,
-    on_close = logs_on_close,
     header = ws_auth_header)
 ws_logs.run_forever()
-
-# todo: raise exception if no data is recieved at all?
 
 if log_handler.has_error == True:
     raise Exception(log_handler.last_error)
 log_handler.clear()
-
-print("=== DONE ===")

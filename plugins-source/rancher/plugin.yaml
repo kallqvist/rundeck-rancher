@@ -42,7 +42,7 @@ providers:
       plugin-type: script
       script-interpreter: python
       script-file: copy-file.py
-      script-args: 1 2 3
+      script-args: 1 2 3 # todo: remove
     - name: rancher-trigger-runonce
       title: Rancher trigger run-once container
       service: WorkflowNodeStep
