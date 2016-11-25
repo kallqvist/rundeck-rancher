@@ -2,8 +2,6 @@ FROM ubuntu
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD content/ /
-
 RUN apt-get -qq update && apt-get -qqy upgrade && apt-get -qqy install --no-install-recommends bash openjdk-8-jre-headless procps sudo openssh-client mysql-client curl git && apt-get clean
 RUN curl -Lo /tmp/rundeck.deb http://dl.bintray.com/rundeck/rundeck-deb/rundeck-2.6.10-1-GA.deb
 RUN curl -Lo /tmp/rundeck-cli.deb https://github.com/rundeck/rundeck-cli/releases/download/v0.1.19/rundeck-cli_0.1.19-1_all.deb
