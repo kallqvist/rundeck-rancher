@@ -3,7 +3,9 @@
 Dockerfile for Rundeck with custom python plugins for making Rundeck talk to the Rancher API.
 Also installs Rundeck notification plugin for Slack.
 
-### EXPERIMENTAL - Use at your own risk!
+#### EXPERIMENTAL
+I run this in production myself for simple scheduling and backup jobs and it haven't failed me yet.
+With that said; I use this at my own risk, you'll have to use it at your own!
 
 ##### TTY must be disabled in Rancher for script execution or triggering of run-once service to function!
 Plugins will raise exceptions otherwise but it might not be immediately obvious why it's doing that.
