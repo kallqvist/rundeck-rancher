@@ -9,6 +9,7 @@ Also installs Rundeck notification plugin for Slack.
 Plugins will raise exceptions otherwise but it might not be immediately obvious why it's doing that.
 
 ### Getting started
+- For pre-built image head over to [DockerHub](https://hub.docker.com/r/kallqvist/rundeck-rancher/)
 - Requires config and API keys specific to your Rancher installation.
 - Check attached [docker-compose.yml](https://github.com/kallqvist/rundeck-rancher/blob/master/docker-compose.yml) for required config and how to run with persistant SQL backing store.
 ```
