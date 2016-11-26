@@ -1,5 +1,5 @@
 rundeck:
-  build: .
+  image: kallqvist/rundeck-rancher
   ports:
     - 4440:4440
   links:
