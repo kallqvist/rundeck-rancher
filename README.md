@@ -8,9 +8,16 @@ Also installs Rundeck notification plugin for Slack.
 ##### TTY must be disabled in Rancher for script execution or triggering of run-once service to function!
 Plugins will raise exceptions otherwise but it might not be immediately obvious why it's doing that.
 
+### Getting started
+- Requires config and API keys specific to your Rancher installation.
+- Check attached [docker-compose.yml](https://github.com/kallqvist/rundeck-rancher/blob/master/docker-compose.yml) for required config and how to run with persistant SQL backing store.
+```
+docker-compose up
+# Direct your browser to http://127.0.0.1:4440
+# Default username and password for Rundeck is admin / admin
+```
 
-
-### Rundeck plugins in this repo:
+## Rundeck plugins in this repo:
 #### Rancher resource collector
 - Using the Rancher API to fetch containers from a given Rancher environment ID and returning them as nodes to Rundeck.
 - Can filter on Rancher stack name using a regex pattern.
@@ -37,4 +44,4 @@ Plugins will raise exceptions otherwise but it might not be immediately obvious 
 - [Rundeck Slack plugin](https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin)
 
 ### Merge requests
-- Are very much welcome!
+- Are very much welcome over at [GitHub](https://github.com/kallqvist/rundeck-rancher)!

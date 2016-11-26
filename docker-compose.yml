@@ -5,12 +5,17 @@ rundeck:
   links:
     - mysql:mysql
   environment:
-    RDECK_HOST: "192.168.99.100"
+    RDECK_HOST: "127.0.0.1"
+    CATTLE_CONFIG_URL: "https://rancher.example.com/v1"
+    CATTLE_ACCESS_KEY: "xyz123"
+    CATTLE_SECRET_KEY: "xyz123"
+    RDECK_ADMIN_USERNAME: admin
+    RDECK_ADMIN_PASSWORD: admin
     DATABASE_URL: "jdbc:mysql://mysql/rundeck?autoReconnect=true"
     DATABASE_USER: rundeck
     DATABASE_PASSWORD: rundeck
   volumes:
-    - ./plugins-source:/build
+    - ./rundeck-logs:/var/lib/rundeck/logs
 
 mysql:
   image: mysql
