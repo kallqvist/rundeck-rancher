@@ -5,14 +5,14 @@ from _nodes_shared import *
 # todo: raise exception if no data is recieved at all?
 
 # check if is start-once service
-is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false') == 'true')
+is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false').lower() == 'true')
 if not is_start_once:
     raise Exception("Can't run, isn't start-once service!")
 
 # setup websocket for reading log output
 api_data_logs = {
     "follow": True,
-    "lines": 100
+    "lines": 1
 }
 api_url_logs = "{}/containers/{}?action=logs".format(api_base_url, node_id)
 api_res_logs = requests.post(api_url_logs, auth=api_auth, json=api_data_logs)
@@ -64,6 +64,17 @@ log_handler.clear()
 # EVENT LISTENER
 #
 
+# first we read container info (start-count) so we know if we're dealing with old events or not...
+api_url_info = "{}/containers/{}".format(api_base_url, node_id)
+api_res_info = requests.get(api_url_info, auth=api_auth)
+api_res_info_json = api_res_info.json()
+old_container_start_count = api_res_info_json['startCount']
+# print(json.dumps(api_res_info_json, indent=2))
+
+if api_res_info.status_code != 200:
+    raise Exception("Can't read container information, code \"{} ({})\"!".format(api_res_info_json['code'], api_res_info_json['status']))
+
+
 def events_on_open(ws):
     print("### events stream opened ###")
     # tell the service to start before attaching log listener
@@ -78,10 +89,13 @@ def events_on_message(ws, message):
     json_message = json.loads(message)
     if "resourceId" not in json_message or json_message["resourceId"] != node_id:
         return
+    # is this an old event?
+    new_container_start_count = json_message["data"]["resource"]["startCount"]
+    if new_container_start_count <= old_container_start_count:
+        return
     node_state = json_message["data"]["resource"]["state"]
     print("Container state: {}".format(node_state))
-    # todo: timing issues with short lived containers (already stopped)?
-    if node_state in ["running"]:
+    if node_state in ["running", "stopping", "stopped"]:
         ws.close()
 
 ws_base_url = api_base_url.replace("https:", "wss:").replace("http:", "ws:")
