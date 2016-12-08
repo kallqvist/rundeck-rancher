@@ -34,10 +34,11 @@ WORKDIR /
 
 ADD ./docker-entrypoint.sh /docker-entrypoint.sh
 
+# server url will be generated from protocol, host and port if missing
+ENV RDECK_SERVER_URL ""
 ENV RDECK_PROTOCOL http
 ENV RDECK_HOST localhost
-ENV RDECK_HTTP_PORT 4440
-ENV RDECK_HTTPS_PORT 4443
+ENV RDECK_PORT 4440
 ENV RDECK_ADMIN_USERNAME admin
 ENV RDECK_ADMIN_PASSWORD admin
 ENV DATABASE_URL jdbc:h2:file:/var/lib/rundeck/data/rundeckdb;MVCC=true;TRACE_LEVEL_FILE=4
