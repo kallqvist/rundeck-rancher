@@ -7,7 +7,7 @@ author: Klas Källqvist
 date: 2016-11-11
 providers:
     - name: rancher-resources
-      title: Rancher resource collector
+      title: Rancher container collector
       service: ResourceModelSource
       resource-format: resourcejson
       plugin-type: script

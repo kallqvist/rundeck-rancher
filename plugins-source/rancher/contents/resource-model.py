@@ -23,12 +23,20 @@ if len(environment_id) == 0:
 
 api_url_containers = '{}/projects/{}/containers'.format(api_base_url, environment_id)
 api_res_containers = requests.get(api_url_containers, auth=api_auth).json()
-
 if not 'data' in api_res_containers:
     raise Exception("No data returned from Rancher API")
+api_res_list = api_res_containers['data']
 
+# dealing with paginated results
+while api_res_containers['pagination']['next']:
+    api_res_containers = requests.get(api_res_containers['pagination']['next'], auth=api_auth).json()
+    if not 'data' in api_res_containers:
+        raise Exception("No data returned from Rancher API")
+    api_res_list += api_res_containers['data']
+    pass
+    
 # sort containers by name
-sorted_containers = sorted(api_res_containers['data'], key=lambda k: k['name'])
+sorted_containers = sorted(api_res_list, key=lambda k: k['name'])
 
 seen_services = []
 nodes = OrderedDict()
