@@ -14,7 +14,7 @@ container_api_res_json = container_api_res.json()
 # print(json.dumps(container_api_res_json, indent=2))
 
 if container_api_res.status_code != 200:
-    raise Exception("Rancher API error, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
+    raise Exception("Rancher API error, code \"{} ({})\"!".format(container_api_res_json['code'], container_api_res_json['status']))
 
 if container_api_res_json['state'] != 'running':
     raise Exception("Invalid container state, must be set to 'running'!")
