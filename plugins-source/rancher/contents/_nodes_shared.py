@@ -1,10 +1,14 @@
 from requests.auth import HTTPBasicAuth
 from dateutil.parser import parse
+from websocket import create_connection
 import websocket
+import StringIO
 import requests
 import logging
+import hashlib
 import base64
 import json
+import time
 import sys
 import os
 import re
