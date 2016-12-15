@@ -1,7 +1,6 @@
 from _nodes_shared import *
 
 pid_check_timeout = 10
-reconnect_timeout = 1
 
 bash_script = os.environ.get('RD_EXEC_COMMAND', '')
 bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
@@ -10,29 +9,30 @@ bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
 if len(bash_script) == 0:
     raise Exception( "Can't run, command is empty!" )
 
-# todo: check if container is running?
+# todo: retry?
 container_api_url = "{}/container/{}".format(api_base_url, node_id)
 container_api_res = requests.get(container_api_url, auth=api_auth)
 container_api_res_json = container_api_res.json()
 # print(json.dumps(container_api_res_json, indent=2))
-
-# create an ID for this job session to use for future reconnection attempts
-rundeck_project = os.environ.get('RD_RUNDECK_PROJECT', '')
-rundeck_exec_id = os.environ.get('RD_JOB_EXECID', '')
-if len(rundeck_project) == 0 or len(rundeck_exec_id) == 0:
-    raise Exception("Can't create run ID, RD_RUNDECK_PROJECT or RD_JOB_EXECID is not getting set by rundeck!")
-
-m = hashlib.md5()
-m.update(bash_script)
-bash_script_md5 = m.hexdigest()
-rundeck_job_exec_id = "{}_{}_{}".format(rundeck_project, rundeck_exec_id, bash_script_md5)
-print("[ I ] Rundeck job execution ID: {}".format(rundeck_job_exec_id))
 
 if container_api_res.status_code != 200:
     raise Exception("Rancher API error, code \"{} ({})\"!".format(container_api_res_json['code'], container_api_res_json['status']))
 
 if container_api_res_json['state'] != 'running':
     raise Exception("Invalid container state, must be set to 'running'!")
+
+# create an ID for this job session to use for future reconnection attempts
+rundeck_project = os.environ.get('RD_RUNDECK_PROJECT', '')
+rundeck_exec_id = os.environ.get('RD_JOB_EXECID', '')
+rundeck_retry_attempt = os.environ.get('RD_JOB_RETRYATTEMPT', '')
+if len(rundeck_project) == 0 or len(rundeck_exec_id) == 0:
+    raise Exception("Can't create run ID, RD_RUNDECK_PROJECT, RD_JOB_EXECID or RD_JOB_RETRYATTEMPT is not getting set by rundeck!")
+
+m = hashlib.md5()
+m.update(bash_script)
+bash_script_md5 = m.hexdigest()
+rundeck_job_exec_id = "{}_{}_{}_{}".format(rundeck_project, rundeck_exec_id, rundeck_retry_attempt, bash_script_md5)
+print("[ I ] Rundeck job execution ID: {}".format(rundeck_job_exec_id))
 
 exec_api_data = {
     "attachStdin": False,
@@ -46,6 +46,7 @@ exec_api_data = {
 }
 # print(json.dumps(exec_api_data, indent=2))
 
+# todo: retry?
 api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 api_res = requests.post(api_url, auth=api_auth, json=exec_api_data)
 api_res_json = api_res.json()
@@ -59,9 +60,10 @@ if api_res.status_code != 200:
 #
 # Execute command and read output
 #
-ws_url_logs = "{}?token={}".format(api_res_json['url'], api_res_json['token'])
 
+# todo: retry?
 # we need to open the socket to trigger the command but we wait with reading logs until everything is done
+ws_url_logs = "{}?token={}".format(api_res_json['url'], api_res_json['token'])
 print("[ I ] Executing command...")
 ws_exec = create_connection(ws_url_logs)
 # result =  ws.recv()
@@ -128,11 +130,12 @@ pid_check_api_data = {
 }
 # print(json.dumps(pid_check_api_data, indent=2))
 
+# todo: retry?
 pid_check_api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 pid_check_api_res = requests.post(pid_check_api_url, auth=api_auth, json=pid_check_api_data)
 pid_check_api_res_json = pid_check_api_res.json()
 
-time.sleep(reconnect_timeout)
+# time.sleep(timeout_between_stages)
 
 # tailing logs while waiting for process to finish
 log_tail_api_data = {
@@ -146,11 +149,12 @@ log_tail_api_data = {
     "tty": False
 }
 
+# todo: retry?
 # log_tail_api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 # log_tail_api_res = requests.post(log_tail_api_url, auth=api_auth, json=log_tail_api_data)
 # log_tail_api_res_json = log_tail_api_res.json()
 #
-# time.sleep(reconnect_timeout)
+# time.sleep(timeout_between_stages)
 
 
 print("[ I ] Reconnecting to see if command is done executing and logs are remaining...")
@@ -169,12 +173,9 @@ while pid_check_result == 1:
     # todo: tail current log progress? don't know if we can or if rundeck buffer all output until script is done?
     # ws_url_log_tail = "{}?token={}".format(pid_check_api_res_json['url'], pid_check_api_res_json['token'])
 
-time.sleep(reconnect_timeout)
+# time.sleep(timeout_between_stages)
 
-print("""
-
-Command execution is done, reading complete log output from container storage...
-""")
+print("[ I ] Command execution is done, reading complete log output from container storage...\n")
 
 # Finally, when we're sure the command isn't running anymore we connect one last time to read all logs from disk
 final_log_read_api_data = {
@@ -189,10 +190,12 @@ final_log_read_api_data = {
 }
 # print(json.dumps(pid_check_api_data, indent=2))
 
+# todo: retry?
 final_log_read_api_url = "{}/containers/{}?action=execute".format(api_base_url, node_id)
 final_log_read_api_res = requests.post(final_log_read_api_url, auth=api_auth, json=final_log_read_api_data)
 final_log_read_api_res_json = final_log_read_api_res.json()
 
+# todo: retry?
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_message = logs_on_message,
     header = ws_auth_header)

@@ -13,8 +13,13 @@ import sys
 import os
 import re
 
+# global config values
+timeout_between_stages = 1 # seconds
+reconnect_timeout = 5 # seconds
+reconnect_attempts_limit = 10
+
 # hiding traceback
-sys.tracebacklimit = 0
+# sys.tracebacklimit = 0
 
 class ErrorLogger(logging.StreamHandler):
     has_error = False
