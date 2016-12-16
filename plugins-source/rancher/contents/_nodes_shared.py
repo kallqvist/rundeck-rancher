@@ -21,6 +21,10 @@ reconnect_attempts_limit = 10
 # hiding traceback
 # sys.tracebacklimit = 0
 
+def log(message):
+    print(message)
+    sys.stdout.flush()
+
 class ErrorLogger(logging.StreamHandler):
     has_error = False
     last_error = None
