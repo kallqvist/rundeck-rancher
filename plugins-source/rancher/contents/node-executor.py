@@ -1,7 +1,5 @@
 from _nodes_shared import *
 
-pid_check_timeout = 10
-
 bash_script = os.environ.get('RD_EXEC_COMMAND', '')
 bash_script = bash_script.strip().encode("string_escape").replace('"', '\\\"')
 # log(bash_script)
@@ -199,6 +197,7 @@ while True:
 log("[ I ] Reconnecting to see if command is done executing and logs are remaining...")
 pid_check_result = 1
 while True:
+    # todo: renew token if needed
     ws_url_pid_check = "{}?token={}".format(pid_check_api_res_json['url'], pid_check_api_res_json['token'])
     ws = create_connection(ws_url_pid_check)
     pid_check_response = base64.b64decode(ws.recv())
@@ -211,8 +210,8 @@ while True:
         pid_check_result = -1
 
     if not pid_check_result == 0:
-        log("[ W ] Process have not yet stopped in container (PID {}), waiting for {} seconds and trying again.".format(pid_check_result, pid_check_timeout))
-        time.sleep(pid_check_timeout)
+        log("[ W ] Process have not yet stopped in container (PID state {}), waiting for {} seconds and trying again.".format(pid_check_result, reconnect_timeout))
+        time.sleep(reconnect_timeout)
         continue
 
     # all good
@@ -224,7 +223,7 @@ while True:
 
 # time.sleep(timeout_between_stages)
 
-log("[ I ] Command execution is done, reading remaining log output from container storage...\n")
+log("[ I ] Command execution is done, reading remaining log output from container storage...")
 
 # Finally, when we're sure the command isn't running anymore we connect one last time to read all logs from disk
 final_log_read_api_data = {
