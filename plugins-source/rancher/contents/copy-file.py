@@ -4,6 +4,12 @@ import websocket
 import json
 import os
 
+import os
+
+print "Content-Type: text/plain\n\n"
+for key in os.environ.keys():
+    print "%30s %s \n" % (key,os.environ[key])
+
 # todo: read from rundeck input?
 bash_script = """
 #!/bin/bash
