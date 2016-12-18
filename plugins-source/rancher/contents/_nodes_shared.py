@@ -1,6 +1,6 @@
 from requests.auth import HTTPBasicAuth
-from dateutil.parser import parse
 from websocket import create_connection
+from dateutil.parser import parse
 import websocket
 import StringIO
 import requests
@@ -13,20 +13,17 @@ import sys
 import os
 import re
 
+from _shared import *
+
 # global config values
-reconnect_timeout = 10 # seconds
+reconnect_timeout = 10  # seconds
 reconnect_attempts_limit = 10
 
-# hiding traceback
-# sys.tracebacklimit = 0
-
-def log(message):
-    print(message)
-    sys.stdout.flush()
 
 class ErrorLogger(logging.StreamHandler):
     has_error = False
     last_error = None
+
     def clear(self):
         self.has_error = False
         self.last_error = None
@@ -35,7 +32,7 @@ class ErrorLogger(logging.StreamHandler):
         msg = self.format(record)
         self.has_error = True
         self.last_error = msg
-        raise Exception (msg)
+        raise Exception(msg)
     pass
 
 log_handler = ErrorLogger()

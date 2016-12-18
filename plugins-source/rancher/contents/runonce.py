@@ -1,3 +1,13 @@
+from dateutil.parser import parse
+import websocket
+import StringIO
+import requests
+import hashlib
+import json
+import time
+import os
+import re
+
 from _nodes_shared import *
 
 # todo: raise exception if no data is recieved at all?
@@ -7,32 +17,25 @@ is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false').lower() == 'true'
 if not is_start_once:
     raise Exception("Can't run, isn't start-once service!")
 
+
+# todo: is container stopped?
+
+
 # setup websocket for reading log output
-api_data_logs = {
-    "follow": True,
-    "lines": 1
-}
 
-reconnect_attempts = 0
-while True:
-    api_url_logs = "{}/containers/{}?action=logs".format(api_base_url, node_id)
-    api_res_logs = requests.post(api_url_logs, auth=api_auth, json=api_data_logs)
-    api_res_logs_json = api_res_logs.json()
+@retry()
+def request_log_read_token():
+    api_data = {
+        "follow": True,
+        "lines": 1
+    }
+    api_url = "{}/containers/{}?action=logs".format(api_base_url, node_id)
+    api_res = requests.post(api_url, auth=api_auth, json=api_data)
+    api_res_json = api_res.json()
     # log(api_res_logs_json)
-
-    if not api_res_logs.status_code < 300:
-        reconnect_attempts += 1
-        if reconnect_attempts > reconnect_attempts_limit:
-            raise Exception("Can't create log listener, code \"{} ({})\"!".format(api_res_logs_json['code'], api_res_logs_json['status']))
-        else:
-            log("[ W ] Failed to create log listener. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-            time.sleep(reconnect_timeout)
-            continue
-
-    # all is good
-    ws_url_logs = "{}?token={}".format(api_res_logs_json['url'], api_res_logs_json['token'])
-    break
-
+    if not api_res.status_code < 300:
+        raise Exception("Can't create log listener, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
+    return api_res_json
 
 
 #
@@ -49,39 +52,26 @@ def history_logs_on_message(ws, message):
     history_logs_last_timestamp[0] = parse(msg_match.group(2)).replace(tzinfo=None)
 
 
-reconnect_attempts = 0
-while True:
+@retry()
+def read_history_logs():
+    log_read_token_res = request_log_read_token()
+    ws_url_logs = "{}?token={}".format(log_read_token_res['url'], log_read_token_res['token'])
     history_logs_ws = websocket.WebSocketApp(ws_url_logs,
         on_message = history_logs_on_message,
         header = ws_auth_header)
     history_logs_ws.run_forever()
-
     if log_handler.has_error == True:
-        reconnect_attempts += 1
-        if reconnect_attempts > reconnect_attempts_limit:
-            raise Exception(log_handler.last_error)
-        else:
-            log("[ W ] Error returned from socket. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-            log(log_handler.last_error)
-            time.sleep(reconnect_timeout)
-            log_handler.clear()
-            continue
-    log_handler.clear()
-
+        e = Exception(log_handler.last_error)
+        log_handler.clear()
+        raise e
     # todo: can logs be empty if service is new? (set to some minutes ago)
     if history_logs_last_timestamp[0] == None:
-        reconnect_attempts += 1
-        if reconnect_attempts > reconnect_attempts_limit:
-            raise Exception("Failed to read last log timestamp!")
-        else:
-            log("[ W ] Failed to read last log timestamp. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-            time.sleep(reconnect_timeout)
-            continue
+        raise Exception("Failed to read last log timestamp!")
 
-    # all is good
-    history_logs_last_timestamp = history_logs_last_timestamp[0]
-    break
-
+read_history_logs()
+history_logs_last_timestamp = history_logs_last_timestamp[0]
+if history_logs_last_timestamp == None:
+    raise Exception("Failed to read last log timestamp!")
 log("[ I ] Last historical timestamp: {}".format(history_logs_last_timestamp))
 
 
@@ -215,14 +205,12 @@ def logs_on_message(ws, message):
             log(log_message)
 
 # todo: retry?
+log_read_token_res = request_log_read_token()
+ws_url_logs = "{}?token={}".format(log_read_token_res['url'], log_read_token_res['token'])
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_message = logs_on_message,
     header = ws_auth_header)
 ws_logs.run_forever()
-
-if log_handler.has_error == True:
-    raise Exception(log_handler.last_error)
-log_handler.clear()
 
 
 # reconnect to read any remaining logs when we're sure container is stopped
@@ -246,13 +234,13 @@ while container_state != "stopped":
 
         # all is good
         container_state = container_state_api_res_json["state"].lower()
-        log("Container state: " + container_state)
-        time.sleep(reconnect_timeout)
+        log("[ I ] Container state: " + container_state)
         break
 
 # read any remaining logs
 log("[ I ] Reconnecting to check if any unread logs are found...")
 # todo: retry?
+# todo: renew token
 ws_logs = websocket.WebSocketApp(ws_url_logs,
     on_message = logs_on_message,
     header = ws_auth_header)

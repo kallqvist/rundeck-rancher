@@ -1,13 +1,38 @@
 # http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
 
-def retry(func, timeout):
-   def retry_wrapper(*args, **kwargs):
-       res = func(*args, **kwargs)
-       return ">> {0} ({1}) <<".format(res, timeout)
-   return retry_wrapper
+from functools import wraps
+import time
+import sys
 
-@retry(timeout=2)
-def stuff():
-    return "blabla"
+# hiding traceback
+# sys.tracebacklimit = 0
 
-print stuff()
+_default_retry_interval = 2  # seconds
+_default_retry_attempts = 1
+
+
+def log(message):
+    print(message)
+    sys.stdout.flush()
+
+
+def retry(interval=_default_retry_interval, attempts=_default_retry_attempts):
+    def deco_retry(func):
+        @wraps(func)
+        def retry_wrapper(*args, **kwargs):
+            attempt = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    attempt += 1
+                    if attempt > attempts and attempts >= 0:
+                        raise e
+                    log("[ E ] {}".format(e))
+                    if attempts >= 0:
+                        log("[ I ] Retrying attempt {}/{} in {} seconds...".format(attempt, attempts, interval))
+                    else:
+                        log("[ I ] Retrying attempt {} in {} seconds...".format(attempt, interval))
+                    time.sleep(interval)
+        return retry_wrapper
+    return deco_retry
