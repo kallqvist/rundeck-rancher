@@ -52,7 +52,7 @@ exec_api_data = {
     "command": [
       "/bin/bash",
       "-c",
-      'echo $$ > /tmp/{rundeck_job_exec_id}.pid; {{ {{ {bash_script}; }} > >( while read line; do echo 1 $(date -u +%Y-%m-%dT%H:%M:%S.%6NZ) ${{line}}; done ); }} 2> >( while read line; do echo 2 $(date -u +%Y-%m-%dT%H:%M:%S.%6NZ) ${{line}}; done ) | tee /tmp/{rundeck_job_exec_id}.out'.format(rundeck_job_exec_id=rundeck_job_exec_id, bash_script=bash_script)
+      'echo $$ > /tmp/{rundeck_job_exec_id}.pid; {{ {{ {bash_script}; }} > >( while read line; do echo 1 $(date -u +%Y-%m-%dT%H:%M:%SZ) ${{line}}; done ); }} 2> >( while read line; do echo 2 $(date -u +%Y-%m-%dT%H:%M:%SZ) ${{line}}; done ) | tee /tmp/{rundeck_job_exec_id}.out'.format(rundeck_job_exec_id=rundeck_job_exec_id, bash_script=bash_script)
     ],
     "tty": False
 }
@@ -195,6 +195,7 @@ ws_exec = websocket.WebSocketApp(ws_url_execute,
                                  header=ws_auth_header)
 ws_exec.run_forever()
 log("[ I ] Log listener disconnected...")
+log("[ I ] Reading PID status to check if still running...")
 execute_pid_check()
 log("[ I ] Command execution is done, reading remaining log output from container storage...")
 # Finally, when we're sure the command isn't running anymore we connect one last time to read all logs from disk
