@@ -85,7 +85,7 @@ def logs_on_message(ws, message):
     for log_line in string_buf:
         if len(log_line.strip()) == 0:
             continue
-        msg_match = re.match(log_re_pattern, log_line)
+        msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
             log("[ E ] PARSE_ERROR: " + log_line + " ::")
             raise Exception("Failed to read log format, regex does not match!")

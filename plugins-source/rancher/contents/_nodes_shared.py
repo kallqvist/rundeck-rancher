@@ -39,7 +39,7 @@ log_handler = ErrorLogger()
 logger = logging.getLogger('websocket')
 logger.setLevel(logging.ERROR)
 logger.addHandler(log_handler)
-log_re_pattern = '^(\d*) (.*?Z) (.*)$'
+log_re_pattern = r"^(\d*)\s+?(.*?Z)\s?(.*)?$"
 
 # todo: remove this when rundeck bug is resolved
 cattle_config = json.load(open("/rancher-auth-workaround.json"))
