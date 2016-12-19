@@ -36,7 +36,7 @@ def execute_command():
     execute_token_res = request_execute_token()
     ws_url_execute = "{}?token={}".format(execute_token_res['url'], execute_token_res['token'])
     ws_exec = websocket.WebSocketApp(ws_url_execute,
-                                     on_message=logs_on_message,
+                                     on_message=execute_on_message,
                                      header=ws_auth_header)
     ws_exec.run_forever()
 
@@ -109,15 +109,20 @@ def execute_read_final_logs():
     final_logs_token = request_log_read_token()
     ws_url_final_logs = "{}?token={}".format(final_logs_token['url'], final_logs_token['token'])
     ws_logs = websocket.WebSocketApp(ws_url_final_logs,
-        on_message = logs_on_message,
-        header = ws_auth_header)
+                                     on_message=logs_on_message,
+                                     header=ws_auth_header)
     ws_logs.run_forever()
 
 
+def execute_on_message(ws, message):
+    message_text = base64.b64decode(message).strip()
+    parse_logs(message_text)
+
+log_chunks = []
 seen_logs_md5 = []
 def logs_on_message(ws, message):
     message_text = base64.b64decode(message).strip()
-    parse_logs(message_text)
+    log_chunks.append(message_text)
 
 
 # Read rundeck values
@@ -159,6 +164,7 @@ log("[ I ] Command execution is done, reading remaining log output from containe
 # Connect one last time to read all logs from disk
 log("[ I ] Reconnecting to see if command is done executing and logs are remaining...")
 execute_read_final_logs()
+parse_logs(''.join(log_chunks))
 
 if log_handler.has_error is True:
     raise Exception(log_handler.last_error)
