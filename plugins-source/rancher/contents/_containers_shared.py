@@ -15,10 +15,6 @@ import re
 
 from _shared import *
 
-# global config values
-reconnect_timeout = 10  # seconds
-reconnect_attempts_limit = 10
-
 
 seen_logs_md5 = []
 previous_log_line = [None]

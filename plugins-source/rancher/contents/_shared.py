@@ -7,8 +7,8 @@ import sys
 # hiding traceback
 # sys.tracebacklimit = 0
 
-_default_retry_interval = 2  # seconds
-_default_retry_attempts = 1
+_default_retry_interval = 10  # seconds
+_default_retry_attempts = 10
 
 
 def log(message):
