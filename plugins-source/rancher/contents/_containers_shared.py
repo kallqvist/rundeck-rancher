@@ -29,8 +29,9 @@ def parse_logs(message, newer_than_timestamp=None):
         if not msg_match:
             log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
             log("[ I ] Attempting merge line with previous logs...")
-            merged_line = (previous_log_line[0].strip() if previous_log_line[0] is not None else '') + log_line.strip()
-            msg_match = re.match(log_re_pattern, merged_line, re.MULTILINE | re.DOTALL)
+            log_line = (previous_log_line[0].strip() if previous_log_line[0] is not None else '') + log_line.strip()
+            log("[ I ] [MERGED_LINE]>>> " + log_line + " <<<[/MERGED_LINE]")
+            msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
             raise Exception("Failed to read log format, regex does not match!")
         # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
