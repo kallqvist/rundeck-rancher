@@ -33,6 +33,7 @@ def parse_logs(message, newer_than_timestamp=None):
             log("[ I ] [MERGED_LINE]>>> " + log_line + " <<<[/MERGED_LINE]")
             msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
+            log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
             raise Exception("Failed to read log format, regex does not match!")
         # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
         m = hashlib.md5()
