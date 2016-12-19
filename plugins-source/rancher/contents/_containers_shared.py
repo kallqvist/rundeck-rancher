@@ -20,6 +20,42 @@ reconnect_timeout = 10  # seconds
 reconnect_attempts_limit = 10
 
 
+seen_logs_md5 = []
+previous_log_line = [None]
+def parse_logs(message, newer_than_timestamp=None):
+    # sometimes we get single lines, sometimes we get all the logs at once...
+    string_buf = StringIO.StringIO(message)
+    for log_line in string_buf:
+        if len(log_line.strip()) == 0:
+            continue
+        log_line = log_line.strip()
+        msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
+        if not msg_match:
+            log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
+            log("[ I ] Attempting merge line with previous logs...")
+            merged_line = (previous_log_line[0].strip() if previous_log_line[0] is not None else '') + log_line.strip()
+            msg_match = re.match(log_re_pattern, merged_line, re.MULTILINE | re.DOTALL)
+        if not msg_match:
+            raise Exception("Failed to read log format, regex does not match!")
+        # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
+        m = hashlib.md5()
+        m.update(log_line)
+        message_text_md5 = m.hexdigest()
+        if message_text_md5 in seen_logs_md5:
+            return
+        seen_logs_md5.append(message_text_md5)
+        # parse log format
+        is_error = (int(msg_match.group(1)) == 2)
+        log_date = parse(msg_match.group(2)).replace(tzinfo=None)
+        log_message = msg_match.group(3)
+
+        if newer_than_timestamp == None or log_date > newer_than_timestamp:
+            if is_error:
+                raise Exception(log_message)
+            log(log_message)
+            previous_log_line[0] = log_line
+
+
 @retry()
 def get_container_information():
     api_url = "{}/container/{}".format(api_base_url, node_id)

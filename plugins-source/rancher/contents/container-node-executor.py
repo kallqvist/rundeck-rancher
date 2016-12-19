@@ -117,32 +117,7 @@ def execute_read_final_logs():
 seen_logs_md5 = []
 def logs_on_message(ws, message):
     message_text = base64.b64decode(message).strip()
-    # sometimes we get single lines, sometimes we get all the logs at once...
-    string_buf = StringIO.StringIO(message_text)
-    for log_line in string_buf:
-        if len(log_line.strip()) == 0:
-            continue
-        msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
-        if not msg_match:
-            log("[ E ] PARSE_ERROR: " + log_line + " ::")
-            raise Exception("Failed to read log format, regex does not match!")
-        # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
-        m = hashlib.md5()
-        m.update(log_line)
-        message_text_md5 = m.hexdigest()
-        if message_text_md5 in seen_logs_md5:
-            return
-        seen_logs_md5.append(message_text_md5)
-        # parse log format
-        is_error = (int(msg_match.group(1)) == 2)
-        # log_date = parse(msg_match.group(2)).replace(tzinfo=None)
-        log_message = msg_match.group(3)
-        if is_error:
-            raise Exception(log_message)
-        log(log_message)
-
-
-
+    parse_logs(message_text)
 
 
 # Read rundeck values

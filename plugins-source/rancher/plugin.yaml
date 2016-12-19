@@ -7,12 +7,12 @@ author: Klas Källqvist
 date: 2016-11-11
 providers:
     - name: rancher-resources
-      title: Rancher container collector
+      title: Rancher container resource collector
       service: ResourceModelSource
       resource-format: resourcejson
       plugin-type: script
       script-interpreter: python
-      script-file: resource-model.py
+      script-file: container-resource-model.py
       config:
         - type: String
           name: environment_id
@@ -35,17 +35,17 @@ providers:
       mergeEnvironment: true
       plugin-type: script
       script-interpreter: python
-      script-file: node-executor.py
+      script-file: container-node-executor.py
     - name: rancher-filecopy
       title: Rancher container file copier
       service: FileCopier
       plugin-type: script
       script-interpreter: python
-      script-file: copy-file.py
+      script-file: container-copy-file.py
       script-args: 1 2 3 # todo: remove
     - name: rancher-trigger-runonce
-      title: Rancher trigger run-once container
+      title: Trigger Rancher run-once container
       service: WorkflowNodeStep
       plugin-type: script
       script-interpreter: python
-      script-file: runonce.py
+      script-file: container-runonce.py

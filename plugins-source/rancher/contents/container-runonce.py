@@ -77,12 +77,14 @@ def read_logs():
 def read_until_stopped():
     log("[ I ] Waiting until container is stopped...")
     read_logs()
+    log("[ I ] Log socket connection closed")
     container_info_res = get_container_information()
     container_state = container_info_res["state"].lower()
     # log("[ I ] Container state: " + container_state)
     if container_state != "stopped":
         raise Exception("Container isn't in state 'stopped' yet.")
-    read_logs()  # one last time when container is stopped for any leftover logs
+    log("[ I ] Reconnecting to read any remaining logs...")
+    read_logs()
 
 
 
@@ -97,7 +99,7 @@ def history_logs_on_message(ws, message):
     history_logs_last_timestamp[0] = parse(msg_match.group(2)).replace(tzinfo=None)
 
 def events_on_open(ws):
-    log("[ I ] Events stream opened")
+    log("[ I ] Events stream opened, starting container...")
     # trigger container start as soon as socket is open
     start_container()
 
@@ -116,37 +118,8 @@ def events_on_message(ws, message):
         ws.close()
 
 
-
-seen_logs_md5 = []
 def logs_on_message(ws, message):
-    # if we would happen to get more than one line of logs per message
-    string_buf = StringIO.StringIO(message)
-    for log_line in string_buf:
-        if len(log_line.strip()) == 0:
-            continue
-
-        msg_match = re.match(log_re_pattern, log_line)
-        if not msg_match:
-            log("[ E ] PARSE_ERROR: " + log_line + " ::")
-            raise Exception("Failed to read log format, regex does not match!")
-
-        # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
-        m = hashlib.md5()
-        m.update(log_line)
-        message_text_md5 = m.hexdigest()
-        if message_text_md5 in seen_logs_md5:
-            return
-        seen_logs_md5.append(message_text_md5)
-
-        is_error = (int(msg_match.group(1)) == 2)
-        log_date = parse(msg_match.group(2)).replace(tzinfo=None)
-        log_message = msg_match.group(3)
-        # log("{} - {}".format(log_date, log_message))
-
-        if log_date > history_logs_last_timestamp:
-            log(log_message)
-            if is_error:
-                raise Exception(log_line)
+    parse_logs(message, newer_than_timestamp=history_logs_last_timestamp)
 
 
 
@@ -177,8 +150,10 @@ history_logs_last_timestamp = history_logs_last_timestamp[0]
 if history_logs_last_timestamp == None:
     raise Exception("Failed to read last log timestamp!")
 log("[ I ] Last historical timestamp: {}".format(history_logs_last_timestamp))
-
+log("[ I ] Waiting for container to start...")
 wait_for_state_activated()
+read_logs()
+log("[ I ] Waiting for container to stop!")
 read_until_stopped()
 log("[ I ] Done!")
 log("")
