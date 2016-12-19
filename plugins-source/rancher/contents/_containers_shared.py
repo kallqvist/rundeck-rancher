@@ -20,6 +20,17 @@ reconnect_timeout = 10  # seconds
 reconnect_attempts_limit = 10
 
 
+@retry()
+def get_container_information():
+    api_url = "{}/container/{}".format(api_base_url, node_id)
+    api_res = requests.get(api_url, auth=api_auth)
+    api_res_json = api_res.json()
+    # log(json.dumps(api_res_json, indent=2))
+    if not api_res.status_code < 300:
+        raise Exception("Failed to read container information: API error, code \"{} ({})\"!".format(api_res_json['code'], api_res_json['status']))
+    return api_res_json
+
+
 class ErrorLogger(logging.StreamHandler):
     has_error = False
     last_error = None
@@ -32,6 +43,7 @@ class ErrorLogger(logging.StreamHandler):
         msg = self.format(record)
         self.has_error = True
         self.last_error = msg
+        log("[ E ] {}".format(msg))
         raise Exception(msg)
     pass
 

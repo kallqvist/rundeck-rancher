@@ -8,20 +8,8 @@ import time
 import os
 import re
 
-from _nodes_shared import *
+from _containers_shared import *
 
-# todo: raise exception if no data is recieved at all?
-
-# check if is start-once service
-is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false').lower() == 'true')
-if not is_start_once:
-    raise Exception("Can't run, isn't start-once service!")
-
-
-# todo: is container stopped?
-
-
-# setup websocket for reading log output
 
 @retry()
 def request_log_read_token():
@@ -38,22 +26,8 @@ def request_log_read_token():
     return api_res_json
 
 
-#
-# HISTORY LOGS
-#
-
-# read last timestamp from historical logs
-# todo: multiple lines in one message?
-history_logs_last_timestamp = [None]
-def history_logs_on_message(ws, message):
-    msg_match = re.match(log_re_pattern, message)
-    if not msg_match:
-        raise Exception("Failed to read log history, regex does not match!")
-    history_logs_last_timestamp[0] = parse(msg_match.group(2)).replace(tzinfo=None)
-
-
 @retry()
-def read_history_logs():
+def execute_read_history_logs():
     log_read_token_res = request_log_read_token()
     ws_url_logs = "{}?token={}".format(log_read_token_res['url'], log_read_token_res['token'])
     history_logs_ws = websocket.WebSocketApp(ws_url_logs,
@@ -68,61 +42,64 @@ def read_history_logs():
     if history_logs_last_timestamp[0] == None:
         raise Exception("Failed to read last log timestamp!")
 
-read_history_logs()
-history_logs_last_timestamp = history_logs_last_timestamp[0]
-if history_logs_last_timestamp == None:
-    raise Exception("Failed to read last log timestamp!")
-log("[ I ] Last historical timestamp: {}".format(history_logs_last_timestamp))
+
+@retry()
+def start_container():
+    api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
+    api_res_start = requests.post(api_url_start, auth=api_auth)
+    api_res_start_json = api_res_start.json()
+
+
+@retry()
+def wait_for_state_activated():
+    ws_base_url = api_base_url.replace("https:", "wss:").replace("http:", "ws:")
+    ws_url_events = "{}/projects/{}/subscribe?eventNames=resource.change".format(ws_base_url, environment_id)
+    ws_events = websocket.WebSocketApp(ws_url_events,
+        on_open = events_on_open,
+        on_message = events_on_message,
+        header = ws_auth_header
+        )
+    ws_events.run_forever()
+
+
+@retry()
+def read_logs():
+    log("[ I ] Reading logs...")
+    log_read_token_res = request_log_read_token()
+    ws_url_logs = "{}?token={}".format(log_read_token_res['url'], log_read_token_res['token'])
+    ws_logs = websocket.WebSocketApp(ws_url_logs,
+        on_message = logs_on_message,
+        header = ws_auth_header)
+    ws_logs.run_forever()
+
+
+@retry(attempts=-1)
+def read_until_stopped():
+    log("[ I ] Waiting until container is stopped...")
+    read_logs()
+    container_info_res = get_container_information()
+    container_state = container_info_res["state"].lower()
+    # log("[ I ] Container state: " + container_state)
+    if container_state != "stopped":
+        raise Exception("Container isn't in state 'stopped' yet.")
+    read_logs()  # one last time when container is stopped for any leftover logs
 
 
 
-#
-# EVENT LISTENER
-#
 
-# first we read container info (start-count) so we know if we're dealing with old events or not...
-reconnect_attempts = 0
-while True:
-    api_url_info = "{}/containers/{}".format(api_base_url, node_id)
-    api_res_info = requests.get(api_url_info, auth=api_auth)
-    api_res_info_json = api_res_info.json()
-    # log(json.dumps(api_res_info_json, indent=2))
-
-    if not api_res_info.status_code < 300:
-        reconnect_attempts += 1
-        if reconnect_attempts > reconnect_attempts_limit:
-            raise Exception("Can't read container information, code \"{} ({})\"!".format(api_res_info_json['code'], api_res_info_json['status']))
-        else:
-            log("[ W ] Failed to read container information. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-            time.sleep(reconnect_timeout)
-            continue
-
-    # all is good
-    old_container_start_count = api_res_info_json['startCount']
-    break
-
-
+# read last timestamp from historical logs
+# todo: multiple lines in one message?
+history_logs_last_timestamp = [None]
+def history_logs_on_message(ws, message):
+    msg_match = re.match(log_re_pattern, message)
+    if not msg_match:
+        raise Exception("Failed to read log history, regex does not match!")
+    history_logs_last_timestamp[0] = parse(msg_match.group(2)).replace(tzinfo=None)
 
 def events_on_open(ws):
     log("[ I ] Events stream opened")
-    # tell the service to start before attaching log listener
-    reconnect_attempts = 0
-    while True:
-        api_url_start = "{}/containers/{}?action=start".format(api_base_url, node_id)
-        api_res_start = requests.post(api_url_start, auth=api_auth)
-        api_res_start_json = api_res_start.json()
-
-        if not api_res_start.status_code < 300:
-            reconnect_attempts += 1
-            if reconnect_attempts > reconnect_attempts_limit:
-                raise Exception("Can't start service, code \"{} ({})\"!".format(api_res_start_json['code'], api_res_start_json['status']))
-            else:
-                log("[ W ] Failed to start service. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-                time.sleep(reconnect_timeout)
-                continue
-
-        # all is good
-        break
+    # trigger container start as soon as socket is open
+    start_container()
 
 
 def events_on_message(ws, message):
@@ -138,40 +115,7 @@ def events_on_message(ws, message):
     if node_state in ["running", "stopping", "stopped"]:
         ws.close()
 
-ws_base_url = api_base_url.replace("https:", "wss:").replace("http:", "ws:")
 
-
-reconnect_attempts = 0
-while True:
-    ws_url_events = "{}/projects/{}/subscribe?eventNames=resource.change".format(ws_base_url, environment_id)
-    ws_events = websocket.WebSocketApp(ws_url_events,
-        on_open = events_on_open,
-        on_message = events_on_message,
-        header = ws_auth_header
-        )
-    ws_events.run_forever()
-
-    if log_handler.has_error == True:
-        reconnect_attempts += 1
-        if reconnect_attempts > reconnect_attempts_limit:
-            raise Exception(log_handler.last_error)
-        else:
-            log("[ W ] Error returned from events socket. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-            log(log_handler.last_error)
-            time.sleep(reconnect_timeout)
-            log_handler.clear()
-            continue
-
-    log_handler.clear()
-
-    # all is good
-    break
-
-
-
-#
-# LOG LISTENER
-#
 
 seen_logs_md5 = []
 def logs_on_message(ws, message):
@@ -200,54 +144,45 @@ def logs_on_message(ws, message):
         # log("{} - {}".format(log_date, log_message))
 
         if log_date > history_logs_last_timestamp:
+            log(log_message)
             if is_error:
                 raise Exception(log_line)
-            log(log_message)
-
-# todo: retry?
-log_read_token_res = request_log_read_token()
-ws_url_logs = "{}?token={}".format(log_read_token_res['url'], log_read_token_res['token'])
-ws_logs = websocket.WebSocketApp(ws_url_logs,
-    on_message = logs_on_message,
-    header = ws_auth_header)
-ws_logs.run_forever()
 
 
-# reconnect to read any remaining logs when we're sure container is stopped
-log("[ I ] Waiting until container is stopped...")
-container_state = "running"
-while container_state != "stopped":
-    reconnect_attempts = 0
-    while True:
-        container_state_api_url = "{}/container/{}".format(api_base_url, node_id)
-        container_state_api_res = requests.get(container_state_api_url, auth=api_auth)
-        container_state_api_res_json = container_state_api_res.json()
 
-        if not container_state_api_res.status_code < 300:
-            reconnect_attempts += 1
-            if reconnect_attempts > reconnect_attempts_limit:
-                raise Exception("Can't read container state, code \"{} ({})\"!".format(container_state_api_res['code'], container_state_api_res['status']))
-            else:
-                log("[ W ] Failed to read container state. Retrying attempt {}/{} in {} seconds...".format(reconnect_attempts, reconnect_attempts_limit, reconnect_timeout))
-                time.sleep(reconnect_timeout)
-                continue
 
-        # all is good
-        container_state = container_state_api_res_json["state"].lower()
-        log("[ I ] Container state: " + container_state)
-        break
 
-# read any remaining logs
-log("[ I ] Reconnecting to check if any unread logs are found...")
-# todo: retry?
-# todo: renew token
-ws_logs = websocket.WebSocketApp(ws_url_logs,
-    on_message = logs_on_message,
-    header = ws_auth_header)
-ws_logs.run_forever()
+# todo: raise exception if no data is recieved at all?
+
+log("[ I ] Reading container information")
+container_info_res = get_container_information()
+
+
+# check if stopped
+if container_info_res['state'] != 'stopped':
+    raise Exception("Invalid container state, must be set to 'stopped'!")
+
+# todo: check if is start-once service in API resposne instead
+is_start_once = (os.environ.get('RD_NODE_START_ONCE', 'false').lower() == 'true')
+if not is_start_once:
+    raise Exception("Can't run, isn't start-once service!")
+
+# first we read container info (start-count) so we know if we're dealing with old events or not...
+old_container_start_count = container_info_res['startCount']
+
+
+
+execute_read_history_logs()
+history_logs_last_timestamp = history_logs_last_timestamp[0]
+if history_logs_last_timestamp == None:
+    raise Exception("Failed to read last log timestamp!")
+log("[ I ] Last historical timestamp: {}".format(history_logs_last_timestamp))
+
+wait_for_state_activated()
+read_until_stopped()
+log("[ I ] Done!")
+log("")
 
 if log_handler.has_error == True:
     raise Exception(log_handler.last_error)
 log_handler.clear()
-
-log("[ I ] Done!")
