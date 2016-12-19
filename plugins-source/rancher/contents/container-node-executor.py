@@ -161,8 +161,6 @@ log("[ I ] Log listener disconnected...")
 log("[ I ] Reading PID status to check if still running...")
 execute_pid_check()
 log("[ I ] Command execution is done, reading remaining log output from container storage...")
-# Connect one last time to read all logs from disk
-log("[ I ] Reconnecting to see if command is done executing and logs are remaining...")
 execute_read_final_logs()
 parse_logs(''.join(log_chunks))
 
