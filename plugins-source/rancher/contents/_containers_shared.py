@@ -33,7 +33,7 @@ def parse_logs(message, newer_than_timestamp=None):
         m.update(log_line)
         message_text_md5 = m.hexdigest()
         if message_text_md5 in seen_logs_md5:
-            return
+            continue
         seen_logs_md5.append(message_text_md5)
         # parse log format
         is_error = (int(msg_match.group(1)) == 2)
