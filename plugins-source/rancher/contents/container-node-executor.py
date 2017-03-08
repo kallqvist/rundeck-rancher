@@ -115,13 +115,13 @@ def execute_read_final_logs():
 
 
 def execute_on_message(ws, message):
-    message_text = base64.b64decode(message).strip()
+    message_text = base64.b64decode(message)
     parse_logs(message_text)
 
 log_chunks = []
 seen_logs_md5 = []
 def logs_on_message(ws, message):
-    message_text = base64.b64decode(message).strip()
+    message_text = base64.b64decode(message)
     log_chunks.append(message_text)
 
 
@@ -163,6 +163,7 @@ execute_pid_check()
 log("[ I ] Command execution is done, reading remaining log output from container storage...")
 execute_read_final_logs()
 parse_logs(''.join(log_chunks))
+log("[ I ] Done!")
 
 if log_handler.has_error is True:
     raise Exception(log_handler.last_error)

@@ -23,7 +23,7 @@ def parse_logs(message, newer_than_timestamp=None):
     for log_line in string_buf:
         if len(log_line.strip()) == 0:
             continue
-        log_line = log_line.strip()
+        # log_line = log_line.strip()
         msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
             log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
@@ -80,9 +80,9 @@ log_re_pattern = r"^(\d*)\s+?(.*?Z)\s?(.*)?$"
 
 # todo: remove this when rundeck bug is resolved
 cattle_config = json.load(open("/rancher-auth-workaround.json"))
-api_base_url = cattle_config['host'] # os.environ['CATTLE_CONFIG_URL']
-api_access_key = cattle_config['access_key'] #  os.environ['CATTLE_ACCESS_KEY']
-api_secret_key = cattle_config['secret_key'] #  os.environ['CATTLE_SECRET_KEY']
+api_base_url = cattle_config['host']  # os.environ['CATTLE_CONFIG_URL']
+api_access_key = cattle_config['access_key']  # os.environ['CATTLE_ACCESS_KEY']
+api_secret_key = cattle_config['secret_key']  # os.environ['CATTLE_SECRET_KEY']
 api_auth = HTTPBasicAuth(api_access_key, api_secret_key)
 ws_auth_header = {'Authorization': "Basic {}".format(base64.b64encode("{}:{}".format(api_access_key, api_secret_key)))}
 
