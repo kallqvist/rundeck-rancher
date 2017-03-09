@@ -116,7 +116,7 @@ def execute_read_final_logs():
 
 def execute_on_message(ws, message):
     message_text = base64.b64decode(message)
-    parse_logs(message_text)
+    parse_logs(message_text, fail_on_parse_error=False)
 
 log_chunks = []
 seen_logs_md5 = []

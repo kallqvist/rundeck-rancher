@@ -17,7 +17,7 @@ from _shared import *
 
 
 seen_logs_md5 = []
-def parse_logs(message, newer_than_timestamp=None):
+def parse_logs(message, newer_than_timestamp=None, fail_on_parse_error=True):
     # sometimes we get single lines, sometimes we get all the logs at once...
     string_buf = StringIO.StringIO(message)
     for log_line in string_buf:
@@ -27,7 +27,10 @@ def parse_logs(message, newer_than_timestamp=None):
         msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
             log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
-            raise Exception("Failed to read log format, regex does not match!")
+            if fail_on_parse_error:
+                raise Exception("Failed to read log format, regex does not match!")
+            else:
+                log("[ W ] Would have raised exception here but was told to ignore it for now")
         # keep track of log line hashes so we can ignore already read lines if we need to reconnect and fetch logs
         m = hashlib.md5()
         m.update(log_line)
