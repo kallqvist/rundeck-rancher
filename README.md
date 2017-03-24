@@ -3,6 +3,16 @@
 Dockerfile for Rundeck with custom python plugins for making Rundeck talk to the Rancher API.
 Also installs Rundeck notification plugin for Slack.
 
+### Forks
+This repo is intended to be for building a self-contained docker image with both rundeck and this plugin installed in it.
+My usecase for this is 100% based on docker together with rancher and that is what I want to streamline this repo for.
+
+If you're looking to use this as an installable plugin directly in your already existing rundeck installation there is a fork that does just that and probably would be a much better starting point for you than what I have here.
+Check it out!
+https://github.com/ATIH/rundeck-rancher
+
+I'll keep an eye on that plugin and if it seems to be progressing faster than the code here and also turns out to be flexible enough for me to be able to use for my pretty specific use-case I might rework this repo to simply be a Docker-file that installs their plugin instead.
+
 #### EXPERIMENTAL
 I run this in production myself for simple scheduling and backup jobs and it haven't failed me yet.
 With that said; I use this at my own risk, you'll have to use it at your own!
