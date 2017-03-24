@@ -11,8 +11,6 @@ If you're looking to use this as an installable plugin directly in your already 
 Check it out!
 https://github.com/ATIH/rundeck-rancher
 
-I'll keep an eye on that plugin and if it seems to be progressing faster than the code here and also turns out to be flexible enough for me to be able to use for my pretty specific use-case I might rework this repo to simply be a Docker-file that installs their plugin instead.
-
 #### EXPERIMENTAL
 I run this in production myself for simple scheduling and backup jobs and it haven't failed me yet.
 With that said; I use this at my own risk, you'll have to use it at your own!
