@@ -23,7 +23,18 @@ def parse_logs(message, newer_than_timestamp=None, fail_on_parse_error=True):
     for log_line in string_buf:
         if len(log_line.strip()) == 0:
             continue
-        # log_line = log_line.strip()
+
+        # undocumented junk in beginning of rancher log lines?
+        # char codes are 1, 0 and random byte(??)
+        # trying to solve this by stripping the first eight chars if the pattern
+        # of ones and zeroes are discovered
+        # todo: dunno what or why this is or when it was introduced in rancher...
+        # junk_strip_re_pattern = r'^(\x01\x00{6}.*?)([1-2]+ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'
+        junk_strip_re_pattern = r"^(?:\\x\d{2})*.*?([1-2] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z.*?)\\n"
+        junk_match = re.match(junk_strip_re_pattern, repr(log_line))
+        if junk_match:
+            log_line = junk_match.group(1)
+
         msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
             log("[ E ] [PARSE_ERROR]>>> " + log_line + " <<<[/PARSE_ERROR]")
