@@ -71,7 +71,7 @@ def execute_pid_check():
         pid_check_token_res['token']
         )
     ws = create_connection(ws_url_pid_check)
-    pid_check_response = base64.b64decode(ws.recv())
+    pid_check_response = parse_websocket_response(base64.b64decode(ws.recv()))
     ws.close()
     try:
         pid_check_result = int(pid_check_response)

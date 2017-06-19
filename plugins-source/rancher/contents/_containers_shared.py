@@ -16,6 +16,17 @@ import re
 from _shared import *
 
 
+# sometimes junk in beginning of docker log lines...
+# trying to solve this by stripping the first eight chars if the pattern
+# of the header is detected (gotta be conditional since older docker versions wouldn't do this)
+# https://docs.docker.com/engine/api/v1.26/#operation/ContainerAttach
+def parse_websocket_response(message):
+    _msg_bytes = map(ord, message)
+    if _msg_bytes[2:5] == [0, 0, 0]:
+        return ''.join(map(chr,_msg_bytes[8:])).rstrip('\n')
+    return message.rstrip('\n')
+
+
 seen_logs_md5 = []
 def parse_logs(message, newer_than_timestamp=None, fail_on_parse_error=True):
     # sometimes we get single lines, sometimes we get all the logs at once...
@@ -24,16 +35,7 @@ def parse_logs(message, newer_than_timestamp=None, fail_on_parse_error=True):
         if len(log_line.strip()) == 0:
             continue
 
-        # undocumented junk in beginning of rancher log lines?
-        # char codes are 1, 0 and random byte(??)
-        # trying to solve this by stripping the first eight chars if the pattern
-        # of ones and zeroes are discovered
-        # todo: dunno what or why this is or when it was introduced in rancher...
-        # junk_strip_re_pattern = r'^(\x01\x00{6}.*?)([1-2]+ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'
-        junk_strip_re_pattern = r"^(?:\\x\d{2})*.*?([1-2] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z.*?)\\n"
-        junk_match = re.match(junk_strip_re_pattern, repr(log_line))
-        if junk_match:
-            log_line = junk_match.group(1)
+        log_line = parse_websocket_response(log_line)
 
         msg_match = re.match(log_re_pattern, log_line, re.MULTILINE | re.DOTALL)
         if not msg_match:
