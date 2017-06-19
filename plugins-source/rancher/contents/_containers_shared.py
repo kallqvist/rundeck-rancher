@@ -22,8 +22,14 @@ from _shared import *
 # https://docs.docker.com/engine/api/v1.26/#operation/ContainerAttach
 def parse_websocket_response(message):
     _msg_bytes = map(ord, message)
-    if _msg_bytes[2:5] == [0, 0, 0]:
-        return ''.join(map(chr,_msg_bytes[8:])).rstrip('\n')
+    if 0 in _msg_bytes:
+        _header_pos = _msg_bytes.index(0) - 1
+        if _msg_bytes[_header_pos+1:_header_pos+4] == [0, 0, 0]:
+            if _header_pos == 0:
+                return ''.join(map(chr,_msg_bytes[8:])).rstrip('\n')
+            else:
+                return  ''.join(map(chr,_msg_bytes[0:_header_pos])) + \
+                        ''.join(map(chr,_msg_bytes[_header_pos+8:])).rstrip('\n')
     return message.rstrip('\n')
 
 
