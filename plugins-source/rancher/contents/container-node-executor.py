@@ -121,7 +121,7 @@ def execute_on_message(ws, message):
 log_chunks = []
 seen_logs_md5 = []
 def logs_on_message(ws, message):
-    message_text = base64.b64decode(message)
+    message_text = parse_websocket_response(base64.b64decode(message))
     log_chunks.append(message_text)
 
 
